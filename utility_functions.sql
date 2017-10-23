@@ -1,43 +1,45 @@
+-- Outputs the space currently occupied by the user's tables.
 SELECT
 	SUM(table_size_mb)
+		AS "Size occupied by the user's tables (in MegaBytes)"
 FROM
 	(
-	SELECT
-		segment_name
-			table_name,
-		SUM(bytes) / (1024 * 1024)
-			table_size_MB
-	FROM
-		user_extents 
-	WHERE
-		segment_type = 'TABLE'
-		AND segment_name LIKE '%' 
-	GROUP BY
-		segment_name 
-	ORDER BY
-		2 DESC
+		SELECT
+			segment_name
+				table_name,
+			SUM(bytes) / (1024 * 1024)
+				table_size_MB
+		FROM
+			user_extents
+		WHERE
+			segment_type = 'TABLE'
+			AND segment_name LIKE '%'
+		GROUP BY
+			segment_name
+		ORDER BY
+			2 DESC
 	)
 ;
 
--- 
+-- Allows us to search though all tables available to us.
 SELECT
 	table_name
 FROM
 	all_tables
 WHERE
 	table_name LIKE '%PERSON%'
-	AND table_name LIKE 'PDW%'
 ;
 
+-- Allows us to look at a historic version of the table.
 SELECT
 	*
 FROM
-	max_support_table
+	${TABLE_NAME}
 AS OF
-	timestamp(sysdate - 0.01)
+	TIMESTAMP(SYSDATE() - 0.01)
 ;
 
--- List all tables in schema.
+-- List all tables in the user's schema.
 SELECT DISTINCT
 	object_name
 FROM
@@ -47,10 +49,10 @@ WHERE
 ;
 
 SELECT
-	tablespace_name, 
-	SUM(table_size_MB) 
+	tablespace_name,
+	SUM(table_size_MB)
 FROM
-	( 
+	(
 	SELECT
 		x.tablespace_name,
 		segment_name
@@ -61,12 +63,12 @@ FROM
 		user_extents x
 	WHERE
 		segment_type = 'TABLE'
-		AND segment_name LIKE '%' 
+		AND segment_name LIKE '%'
 	GROUP BY
-		x.tablespace_name, 
-		segment_name 
+		x.tablespace_name,
+		segment_name
 	ORDER BY
-		2 DESC 
+		2 DESC
 	)
 GROUP BY
 	tablespace_name
